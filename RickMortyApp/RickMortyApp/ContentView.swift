@@ -35,8 +35,10 @@ struct ContentView: View {
         viewModel.search(newValue)
       }
       .toolbar {
-        NavigationLink(destination: FavoritesView()) {
-          Image(systemName: "heart.fill")
+        ToolbarItem(placement: .topBarTrailing) {
+          NavigationLink(destination: FavoritesView(viewModel: viewModel)) {
+            Image(systemName: "heart.fill")
+          }
         }
       }
     }

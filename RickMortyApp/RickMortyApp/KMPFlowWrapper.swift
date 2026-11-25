@@ -11,11 +11,11 @@ import Combine
 class CharacterListObservable: ObservableObject {
   private let kmpViweModel = CharacterViewModel()
   
-  private var job: RickMortyKMP.Kotlinx_coroutines_coreJob?
+  private var jobs: [RickMortyKMP.Kotlinx_coroutines_coreJob] = []
   
   @Published var characters: [RickMortyKMP.Character] = []
   @Published var isLoading: Bool = false
-  @Published var favoriteIds: Set<Int32> = []
+  @Published var favorites: [RickMortyKMP.Character] = []
   
   init() {
     observeCharactersFlow()
@@ -24,28 +24,28 @@ class CharacterListObservable: ObservableObject {
   }
   
   private func observeCharactersFlow() {
-    job = kmpViweModel.charactersFlow.watch(block: { [weak self] list in
-      self?.characters = list as! [Character]
-    })
+    jobs.append(kmpViweModel.charactersFlow.watch(block: { [weak self] list in
+      self?.characters = list as? [Character] ?? []
+    }))
   }
   
   private func observeLoadingFlow() {
-    kmpViweModel.isLoadingFlow.watch { [weak self] loading in
+    jobs.append(kmpViweModel.isLoadingFlow.watch { [weak self] loading in
       guard let loading = loading else {
         return
       }
       self?.isLoading = loading.boolValue
-    }
+    })
   }
   
   private func observeFavoritesFlow() {
-    kmpViweModel.favoriteIdsFlow.watch { ids in
-      let set = ids as! Set<KotlinInt>
-      self.favoriteIds = Set(set.map { $0.int32Value })
-    }
+    jobs.append(kmpViweModel.favoritesFlow.watch { [weak self] list in
+      self?.favorites = list as? [Character] ?? []
+    })
   }
   
   deinit {
+    jobs.forEach { $0.cancel(cause: nil) }
     kmpViweModel.clear()
   }
   
@@ -57,11 +57,11 @@ class CharacterListObservable: ObservableObject {
     kmpViweModel.search(query: query)
   }
   
-  func toggleFavorite(id: Int32) {
-    kmpViweModel.toggleFavorite(id: id)
+  func toggleFavorite(_ character: Character) {
+    kmpViweModel.toggleFavorite(character: character)
   }
   
   func isFavorite(id: Int32) -> Bool {
-    favoriteIds.contains(id)
+    favorites.contains { $0.id == id }
   }
 }

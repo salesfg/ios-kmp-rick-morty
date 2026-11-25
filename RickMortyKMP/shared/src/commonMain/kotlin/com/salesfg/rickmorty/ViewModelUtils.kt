@@ -8,8 +8,8 @@ expect val mainDispatcher: CoroutineDispatcher
 abstract class BaseViewModel {
     private val viewModelScope = CoroutineScope(SupervisorJob() + mainDispatcher)
 
-    fun launch(block: suspend CoroutineScope.() -> Unit) {
-        viewModelScope.launch(block = block )
+    fun launch(block: suspend CoroutineScope.() -> Unit): Job {
+        return viewModelScope.launch(block = block)
     }
 
     fun clear() {

@@ -60,17 +60,21 @@ struct DetailView: View {
     }
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      Button {
-        viewModel.toggleFavorite(id: character.id)
-      } label: {
-        Image(systemName: viewModel.isFavorite(id: character.id) ? "heart.fill" : "heart")
-          .foregroundStyle(.red)
-      }
-      
-      Button {
-        ShareHelper.share(character)
-      } label: {
-        Image(systemName: "square.and.arrow.up")
+      ToolbarItemGroup(placement: .topBarTrailing) {
+        Button {
+          viewModel.toggleFavorite(character)
+        } label: {
+          Image(systemName: viewModel.isFavorite(id: character.id) ? "heart.fill" : "heart")
+            .foregroundStyle(.red)
+        }
+        
+        if let imageURL = URL(string: character.image) {
+          ShareLink(
+            item: imageURL,
+            subject: Text(character.name),
+            message: Text("Olha esse personagem de Rick and Morty: \(character.name) (\(character.species))")
+          )
+        }
       }
     }
   }
