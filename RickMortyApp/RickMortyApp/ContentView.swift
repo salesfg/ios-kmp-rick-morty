@@ -34,15 +34,6 @@ struct ContentView: View {
           }
         }
       }
-      .safeAreaInset(edge: .bottom) {
-        if let error = viewModel.errorMessage, !viewModel.characters.isEmpty {
-          Text(error)
-            .font(.footnote)
-            .padding(8)
-            .frame(maxWidth: .infinity)
-            .background(.red.opacity(0.15))
-        }
-      }
       .navigationTitle("Rick and Morty Characters")
       .searchable(text: $query, prompt: "Buscar personagem")
       .onChange(of: query) { _, newValue in

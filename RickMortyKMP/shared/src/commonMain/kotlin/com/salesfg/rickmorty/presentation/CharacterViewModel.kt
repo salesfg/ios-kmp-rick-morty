@@ -87,6 +87,9 @@ open class CharacterViewModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            println("CharacterViewModel: falha ao carregar personagens: $e")
+            // Não mantém resultados de uma query anterior como se fossem desta.
+            _characters.update { emptyList() }
             _errorMessage.update { "Não foi possível carregar os personagens." }
         } finally {
             // Um job cancelado não pode desligar o loading do job que o substituiu.

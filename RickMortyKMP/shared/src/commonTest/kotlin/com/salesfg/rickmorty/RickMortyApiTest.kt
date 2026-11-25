@@ -9,6 +9,7 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class RickMortyApiTest {
@@ -39,5 +40,14 @@ class RickMortyApiTest {
         }
 
         assertTrue(RickMortyApi(engine).searchCharacters("xyz").isEmpty())
+    }
+
+    @Test
+    fun searchThrowsOnServerError() = runTest {
+        val engine = MockEngine {
+            respond("""{"error":"boom"}""", HttpStatusCode.InternalServerError, jsonHeaders)
+        }
+
+        assertFailsWith<IllegalStateException> { RickMortyApi(engine).searchCharacters("Rick") }
     }
 }

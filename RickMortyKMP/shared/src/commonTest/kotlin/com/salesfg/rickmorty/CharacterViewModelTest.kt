@@ -129,10 +129,33 @@ class CharacterViewModelTest {
 
         assertNotNull(vm.errorMessage.value)
         assertFalse(vm.isLoading.value)
+        assertTrue(vm.characters.value.isEmpty(), "não deve manter resultados antigos após erro")
 
         repository.searchResult = { listOf(rick) }
         vm.search("Rick")
         advanceUntilIdle()
         assertNull(vm.errorMessage.value)
+    }
+
+    @Test
+    fun toggleFavoriteAndGetCharacterFallsBackToFavorites() = runTest {
+        val repository = FakeRepository().apply {
+            all = listOf(rick, morty)
+            searchResult = { listOf(morty) }
+        }
+        val vm = viewModel(repository)
+        vm.loadCharacters()
+        advanceUntilIdle()
+
+        vm.toggleFavorite(rick)
+        assertEquals(listOf(rick), vm.favorites.value)
+
+        vm.search("Morty")
+        advanceUntilIdle()
+        assertEquals(listOf(morty), vm.characters.value)
+        assertEquals(rick, vm.getCharacter(rick.id), "favorito fora da busca ainda deve ser encontrado")
+
+        vm.toggleFavorite(rick)
+        assertTrue(vm.favorites.value.isEmpty())
     }
 }
