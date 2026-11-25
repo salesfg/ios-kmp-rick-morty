@@ -17,12 +17,12 @@ struct ContentView: View {
       Group {
         if viewModel.characters.isEmpty {
           if viewModel.isLoading {
-            ProgressView("Loading...")
+            ProgressView("Carregando...")
           } else if let error = viewModel.errorMessage {
             Text(error)
               .foregroundStyle(.secondary)
           } else {
-            Text("Nothing found.")
+            Text("Nenhum personagem encontrado.")
           }
         } else {
           List {
@@ -34,7 +34,7 @@ struct ContentView: View {
           }
         }
       }
-      .navigationTitle("Rick and Morty Characters")
+      .navigationTitle("Personagens")
       .searchable(text: $query, prompt: "Buscar personagem")
       .onChange(of: query) { _, newValue in
         viewModel.search(newValue)

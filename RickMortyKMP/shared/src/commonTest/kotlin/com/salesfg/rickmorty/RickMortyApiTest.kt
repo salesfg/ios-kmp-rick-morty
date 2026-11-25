@@ -63,4 +63,11 @@ class RickMortyApiTest {
 
         assertEquals(listOf(1, 2), RickMortyApi(engine).getAllCharacters().map { it.id })
     }
+
+    @Test
+    fun getAllCharactersThrowsOnServerError() = runTest {
+        val engine = MockEngine { respond("", HttpStatusCode.ServiceUnavailable, jsonHeaders) }
+
+        assertFailsWith<IllegalStateException> { RickMortyApi(engine).getAllCharacters() }
+    }
 }

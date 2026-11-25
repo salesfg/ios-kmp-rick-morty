@@ -50,23 +50,16 @@ open class CharacterViewModel(
     }
 
     fun loadCharacters() {
-        searchJob?.cancel()
-        searchJob = launch {
-            fetch { repository.getCharactersList() }
-        }
+        startRequest(debounceMs = 0) { repository.getCharactersList() }
     }
 
     /** Busca com debounce: cada chamada cancela a anterior, então só a última query chega à API. */
     fun search(query: String) {
-        searchJob?.cancel()
         if (query.isBlank()) {
             loadCharacters()
             return
         }
-        searchJob = launch {
-            delay(SEARCH_DEBOUNCE_MS)
-            fetch { repository.searchCharacters(query.trim()) }
-        }
+        startRequest(debounceMs = SEARCH_DEBOUNCE_MS) { repository.searchCharacters(query.trim()) }
     }
 
     fun toggleFavorite(character: Character) {
@@ -78,24 +71,31 @@ open class CharacterViewModel(
             ?: favorites.value.firstOrNull { it.id == id }
     }
 
-    private suspend fun fetch(request: suspend () -> List<Character>) {
+    /**
+     * Cancela o request anterior e inicia um novo. O id é gerado aqui, antes do debounce,
+     * para que um request substituído nunca desligue o loading do mais recente.
+     */
+    private fun startRequest(debounceMs: Long, request: suspend () -> List<Character>) {
+        searchJob?.cancel()
         val id = ++requestId
         _isLoading.update { true }
-        try {
-            val list = request()
-            _characters.update { list }
-            _errorMessage.update { null }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            println("CharacterViewModel: falha ao carregar personagens: $e")
-            // Não mantém resultados de uma query anterior como se fossem desta.
-            _characters.update { emptyList() }
-            _errorMessage.update { "Não foi possível carregar os personagens." }
-        } finally {
-            // Um request substituído não pode desligar o loading do request mais recente.
-            if (id == requestId) {
-                _isLoading.update { false }
+        searchJob = launch {
+            try {
+                if (debounceMs > 0) delay(debounceMs)
+                val list = request()
+                _characters.update { list }
+                _errorMessage.update { null }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                println("CharacterViewModel: falha ao carregar personagens: $e")
+                // Não mantém resultados de uma query anterior como se fossem desta.
+                _characters.update { emptyList() }
+                _errorMessage.update { "Não foi possível carregar os personagens." }
+            } finally {
+                if (id == requestId) {
+                    _isLoading.update { false }
+                }
             }
         }
     }

@@ -3,6 +3,8 @@ package com.salesfg.rickmorty
 import com.salesfg.rickmorty.domain.CharacterRepository
 import com.salesfg.rickmorty.domain.FavoritesRepository
 import com.salesfg.rickmorty.model.Character
+import com.salesfg.rickmorty.network.RickMortyApi
+import io.ktor.client.engine.mock.MockEngine
 import com.salesfg.rickmorty.presentation.CharacterViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,7 +30,8 @@ class CharacterViewModelTest {
     private val rick = Character(1, "Rick Sanchez", "Alive", "Human", "rick.jpeg")
     private val morty = Character(2, "Morty Smith", "Alive", "Human", "morty.jpeg")
 
-    private class FakeRepository : CharacterRepository() {
+    // A API recebe um MockEngine que falha se for chamado: o fake nunca deve ir à rede.
+    private class FakeRepository : CharacterRepository(RickMortyApi(MockEngine { error("rede não deve ser usada") })) {
         val searches = mutableListOf<String>()
         var listCalls = 0
         var all: List<Character> = emptyList()
@@ -187,5 +190,26 @@ class CharacterViewModelTest {
 
         assertFalse(vm.isLoading.value)
         assertEquals(listOf(rick), vm.characters.value)
+    }
+
+    @Test
+    fun loadingStaysOnWhileNewSearchIsDebouncing() = runTest {
+        val first = CompletableDeferred<List<Character>>()
+        val repository = FakeRepository().apply {
+            searchResult = { if (it == "Rick") first.await() else listOf(morty) }
+        }
+        val vm = viewModel(repository)
+
+        vm.search("Rick")
+        advanceTimeBy(301)
+        runCurrent()
+
+        vm.search("Morty")
+        runCurrent() // o request "Rick" é cancelado e roda o finally aqui
+        assertTrue(vm.isLoading.value, "loading deve continuar ativo durante o debounce da nova busca")
+
+        advanceUntilIdle()
+        assertFalse(vm.isLoading.value)
+        assertEquals(listOf(morty), vm.characters.value)
     }
 }

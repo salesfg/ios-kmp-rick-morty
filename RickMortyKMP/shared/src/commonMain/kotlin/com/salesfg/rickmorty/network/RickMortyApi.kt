@@ -28,11 +28,9 @@ class RickMortyApi(engine: HttpClientEngine? = null) {
     private val httpClient = if (engine != null) HttpClient(engine, config) else HttpClient(config)
 
     suspend fun getAllCharacters(): List<Character> {
-        val response: CharacterResponse = httpClient
-            .get(BASE_URL)
-            .body()
-
-        return response.results
+        val response = httpClient.get(BASE_URL)
+        if (!response.status.isSuccess()) throw IllegalStateException("Lista falhou: HTTP ${response.status.value}")
+        return response.body<CharacterResponse>().results
     }
 
     // Limitação conhecida: só a primeira página (20 itens) é carregada; paginação via info.next fica para um follow-up.
