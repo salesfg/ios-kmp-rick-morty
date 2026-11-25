@@ -10,6 +10,7 @@ import RickMortyKMP
 
 struct CharacterRow: View {
   let character: RickMortyKMP.Character
+  var isFavorite: Bool = false
   
   var body: some View {
     HStack {
@@ -53,6 +54,11 @@ struct CharacterRow: View {
       }
       
       Spacer()
+      
+      if isFavorite {
+        Image(systemName: "heart.fill")
+          .foregroundStyle(.red)
+      }
     }
     .padding(.vertical, 4)
   }

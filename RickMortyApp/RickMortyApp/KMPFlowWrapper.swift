@@ -15,10 +15,12 @@ class CharacterListObservable: ObservableObject {
   
   @Published var characters: [RickMortyKMP.Character] = []
   @Published var isLoading: Bool = false
+  @Published var favoriteIds: Set<Int32> = []
   
   init() {
     observeCharactersFlow()
     observeLoadingFlow()
+    observeFavoritesFlow()
   }
   
   private func observeCharactersFlow() {
@@ -36,6 +38,13 @@ class CharacterListObservable: ObservableObject {
     }
   }
   
+  private func observeFavoritesFlow() {
+    kmpViweModel.favoriteIdsFlow.watch { ids in
+      let set = ids as! Set<KotlinInt>
+      self.favoriteIds = Set(set.map { $0.int32Value })
+    }
+  }
+  
   deinit {
     kmpViweModel.clear()
   }
@@ -44,5 +53,15 @@ class CharacterListObservable: ObservableObject {
     return kmpViweModel.getCharacter(id: id)
   }
   
+  func search(_ query: String) {
+    kmpViweModel.search(query: query)
+  }
+  
+  func toggleFavorite(id: Int32) {
+    kmpViweModel.toggleFavorite(id: id)
+  }
+  
+  func isFavorite(id: Int32) -> Bool {
+    favoriteIds.contains(id)
+  }
 }
-

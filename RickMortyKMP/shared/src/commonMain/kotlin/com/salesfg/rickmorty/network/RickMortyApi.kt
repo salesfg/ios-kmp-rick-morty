@@ -27,4 +27,12 @@ class RickMortyApi {
 
         return response.results
     }
+
+    suspend fun searchCharacters(name: String): List<Character> {
+        val response: CharacterResponse = httpClient
+            .get("https://rickandmortyapi.com/api/character/?name=$name")
+            .body()
+
+        return response.results
+    }
 }

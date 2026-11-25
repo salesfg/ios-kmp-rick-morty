@@ -14,4 +14,8 @@ class CharacterRepository (
         val list = getCharactersList()
         return list.first { it.id == id }
     }
+
+    suspend fun searchCharacters(name: String): List<Character> {
+        return api.searchCharacters(name)
+    }
 }

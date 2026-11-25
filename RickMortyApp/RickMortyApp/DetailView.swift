@@ -11,6 +11,7 @@ import RickMortyKMP
 
 struct DetailView: View {
   let character: RickMortyKMP.Character
+  @ObservedObject var viewModel: CharacterListObservable
   
   var body: some View {
     ScrollView {
@@ -58,6 +59,20 @@ struct DetailView: View {
       }
     }
     .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      Button {
+        viewModel.toggleFavorite(id: character.id)
+      } label: {
+        Image(systemName: viewModel.isFavorite(id: character.id) ? "heart.fill" : "heart")
+          .foregroundStyle(.red)
+      }
+      
+      Button {
+        ShareHelper.share(character)
+      } label: {
+        Image(systemName: "square.and.arrow.up")
+      }
+    }
   }
   
   private var statusColor: Color {
@@ -102,5 +117,5 @@ struct InfoRow: View {
     species: "Human",
     image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
   )
-  DetailView(character: mock)
+  DetailView(character: mock, viewModel: CharacterListObservable())
 }
