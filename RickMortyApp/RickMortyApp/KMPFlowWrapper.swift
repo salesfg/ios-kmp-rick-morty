@@ -9,18 +9,26 @@ import RickMortyKMP
 import Combine
 
 class CharacterListObservable: ObservableObject {
-  private let kmpViweModel = CharacterViewModel()
+  private let kmpViweModel: CharacterViewModel
   
   private var jobs: [RickMortyKMP.Kotlinx_coroutines_coreJob] = []
   
   @Published var characters: [RickMortyKMP.Character] = []
   @Published var isLoading: Bool = false
   @Published var favorites: [RickMortyKMP.Character] = []
+  @Published var errorMessage: String?
   
-  init() {
+  init(viewModel: CharacterViewModel = CharacterViewModel()) {
+    kmpViweModel = viewModel
     observeCharactersFlow()
     observeLoadingFlow()
+    observeErrorFlow()
     observeFavoritesFlow()
+  }
+  
+  /// Para previews: não faz chamada de rede.
+  static func preview() -> CharacterListObservable {
+    CharacterListObservable(viewModel: CharacterViewModel(autoLoad: false))
   }
   
   private func observeCharactersFlow() {
@@ -35,6 +43,12 @@ class CharacterListObservable: ObservableObject {
         return
       }
       self?.isLoading = loading.boolValue
+    })
+  }
+  
+  private func observeErrorFlow() {
+    jobs.append(kmpViweModel.errorMessageFlow.watch { [weak self] message in
+      self?.errorMessage = message as? String
     })
   }
   

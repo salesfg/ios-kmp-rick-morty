@@ -3,19 +3,19 @@ package com.salesfg.rickmorty.domain
 import com.salesfg.rickmorty.model.Character
 import com.salesfg.rickmorty.network.RickMortyApi
 
-class CharacterRepository (
+open class CharacterRepository (
     private val api: RickMortyApi = RickMortyApi()
 ) {
-    suspend fun getCharactersList(): List<Character> {
+    open suspend fun getCharactersList(): List<Character> {
         return api.getAllCharacters()
     }
 
-    suspend fun getCharacter(id: Int): Character {
+    open suspend fun getCharacter(id: Int): Character {
         val list = getCharactersList()
         return list.first { it.id == id }
     }
 
-    suspend fun searchCharacters(name: String): List<Character> {
+    open suspend fun searchCharacters(name: String): List<Character> {
         return api.searchCharacters(name)
     }
 }

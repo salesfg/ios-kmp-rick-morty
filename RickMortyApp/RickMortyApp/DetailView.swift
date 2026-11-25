@@ -121,5 +121,5 @@ struct InfoRow: View {
     species: "Human",
     image: "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
   )
-  DetailView(character: mock, viewModel: CharacterListObservable())
+  DetailView(character: mock, viewModel: .preview())
 }

@@ -4,9 +4,12 @@ import com.salesfg.rickmorty.BaseViewModel
 import com.salesfg.rickmorty.asCFlow
 import com.salesfg.rickmorty.domain.CharacterRepository
 import com.salesfg.rickmorty.domain.FavoritesRepository
+import com.salesfg.rickmorty.mainDispatcher
 import com.salesfg.rickmorty.model.Character
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,26 +17,36 @@ import kotlinx.coroutines.flow.update
 
 open class CharacterViewModel(
     private val repository: CharacterRepository = CharacterRepository(),
-    private val favoritesRepository: FavoritesRepository = FavoritesRepository()
-): BaseViewModel() {
+    private val favoritesRepository: FavoritesRepository = FavoritesRepository(),
+    dispatcher: CoroutineDispatcher = mainDispatcher,
+    autoLoad: Boolean = true
+): BaseViewModel(dispatcher) {
 
-    constructor() : this(CharacterRepository(), FavoritesRepository())
+    constructor() : this(CharacterRepository(), FavoritesRepository(), mainDispatcher, true)
+
+    /** Para previews/testes no iOS: não dispara a carga inicial. */
+    constructor(autoLoad: Boolean) : this(CharacterRepository(), FavoritesRepository(), mainDispatcher, autoLoad)
+
     private val _characters = MutableStateFlow<List<Character>>(emptyList())
     val characters = _characters.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.asStateFlow()
+
     val favorites = favoritesRepository.favorites
 
     val charactersFlow = characters.asCFlow()
     val isLoadingFlow = isLoading.asCFlow()
+    val errorMessageFlow = errorMessage.asCFlow()
     val favoritesFlow = favorites.asCFlow()
 
     private var searchJob: Job? = null
 
     init {
-        loadCharacters()
+        if (autoLoad) loadCharacters()
     }
 
     fun loadCharacters() {
@@ -62,6 +75,7 @@ open class CharacterViewModel(
 
     fun getCharacter(id: Int): Character? {
         return _characters.value.firstOrNull { it.id == id }
+            ?: favorites.value.firstOrNull { it.id == id }
     }
 
     private suspend fun fetch(request: suspend () -> List<Character>) {
@@ -69,12 +83,16 @@ open class CharacterViewModel(
         try {
             val list = request()
             _characters.update { list }
+            _errorMessage.update { null }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            println("Error: ${e.message}")
+            _errorMessage.update { "Não foi possível carregar os personagens." }
         } finally {
-            _isLoading.update { false }
+            // Um job cancelado não pode desligar o loading do job que o substituiu.
+            if (currentCoroutineContext()[Job] === searchJob) {
+                _isLoading.update { false }
+            }
         }
     }
 
