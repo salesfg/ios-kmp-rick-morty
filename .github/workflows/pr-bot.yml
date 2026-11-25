@@ -17,7 +17,7 @@ jobs:
     # Só em PRs, só comandos "bot ...", e só quando VOCÊ comenta (troque SEU_USUARIO)
     if: >
       github.event.issue.pull_request &&
-      github.event.comment.user.login == 'SEU_USUARIO' &&
+      github.event.comment.user.login == 'salesfg' &&
       (startsWith(github.event.comment.body, 'bot codereview') ||
        startsWith(github.event.comment.body, 'bot approve'))
     runs-on: ubuntu-latest
