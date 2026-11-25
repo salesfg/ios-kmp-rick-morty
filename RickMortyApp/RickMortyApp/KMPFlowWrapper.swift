@@ -15,7 +15,10 @@ class CharacterListObservable: ObservableObject {
   
   @Published var characters: [RickMortyKMP.Character] = []
   @Published var isLoading: Bool = false
-  @Published var favorites: [RickMortyKMP.Character] = []
+  @Published var favorites: [RickMortyKMP.Character] = [] {
+    didSet { favoriteIds = Set(favorites.map(\.id)) }
+  }
+  private var favoriteIds: Set<Int32> = []
   @Published var errorMessage: String?
   
   init(viewModel: CharacterViewModel = CharacterViewModel()) {
@@ -76,6 +79,6 @@ class CharacterListObservable: ObservableObject {
   }
   
   func isFavorite(id: Int32) -> Bool {
-    favorites.contains { $0.id == id }
+    favoriteIds.contains(id)
   }
 }

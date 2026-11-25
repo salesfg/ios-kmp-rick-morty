@@ -14,8 +14,6 @@ class FavoritesRepository {
     private val _favorites = MutableStateFlow<List<Character>>(emptyList())
     val favorites: StateFlow<List<Character>> = _favorites.asStateFlow()
 
-    fun isFavorite(id: Int): Boolean = _favorites.value.any { it.id == id }
-
     fun toggle(character: Character) {
         _favorites.update { current ->
             if (current.any { it.id == character.id }) {

@@ -9,7 +9,6 @@ import com.salesfg.rickmorty.model.Character
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,6 +43,7 @@ open class CharacterViewModel(
     val favoritesFlow = favorites.asCFlow()
 
     private var searchJob: Job? = null
+    private var requestId = 0
 
     init {
         if (autoLoad) loadCharacters()
@@ -79,6 +79,7 @@ open class CharacterViewModel(
     }
 
     private suspend fun fetch(request: suspend () -> List<Character>) {
+        val id = ++requestId
         _isLoading.update { true }
         try {
             val list = request()
@@ -92,8 +93,8 @@ open class CharacterViewModel(
             _characters.update { emptyList() }
             _errorMessage.update { "Não foi possível carregar os personagens." }
         } finally {
-            // Um job cancelado não pode desligar o loading do job que o substituiu.
-            if (currentCoroutineContext()[Job] === searchJob) {
+            // Um request substituído não pode desligar o loading do request mais recente.
+            if (id == requestId) {
                 _isLoading.update { false }
             }
         }

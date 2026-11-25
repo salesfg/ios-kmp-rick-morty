@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -31,10 +32,12 @@ class CharacterViewModelTest {
         val searches = mutableListOf<String>()
         var listCalls = 0
         var all: List<Character> = emptyList()
+        var listError: Throwable? = null
         var searchResult: suspend (String) -> List<Character> = { emptyList() }
 
         override suspend fun getCharactersList(): List<Character> {
             listCalls++
+            listError?.let { throw it }
             return all
         }
 
@@ -157,5 +160,32 @@ class CharacterViewModelTest {
 
         vm.toggleFavorite(rick)
         assertTrue(vm.favorites.value.isEmpty())
+    }
+
+    @Test
+    fun loadCharactersFailureExposesError() = runTest {
+        val repository = FakeRepository().apply { listError = IllegalStateException("offline") }
+        val vm = viewModel(repository)
+
+        vm.loadCharacters()
+        advanceUntilIdle()
+
+        assertNotNull(vm.errorMessage.value)
+        assertFalse(vm.isLoading.value)
+        assertTrue(vm.characters.value.isEmpty())
+    }
+
+    @Test
+    fun loadingIsClearedWithImmediateDispatcher() = runTest {
+        val repository = FakeRepository().apply { all = listOf(rick) }
+        val vm = CharacterViewModel(
+            repository = repository,
+            favoritesRepository = FavoritesRepository(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            autoLoad = true
+        )
+
+        assertFalse(vm.isLoading.value)
+        assertEquals(listOf(rick), vm.characters.value)
     }
 }

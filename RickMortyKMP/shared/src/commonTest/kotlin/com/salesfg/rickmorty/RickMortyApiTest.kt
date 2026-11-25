@@ -50,4 +50,17 @@ class RickMortyApiTest {
 
         assertFailsWith<IllegalStateException> { RickMortyApi(engine).searchCharacters("Rick") }
     }
+
+    @Test
+    fun getAllCharactersParsesResults() = runTest {
+        val engine = MockEngine {
+            respond(
+                """{"results":[{"id":1,"name":"Rick Sanchez","status":"Alive","species":"Human","image":"x"},{"id":2,"name":"Morty Smith","status":"Alive","species":"Human","image":"y"}]}""",
+                HttpStatusCode.OK,
+                jsonHeaders
+            )
+        }
+
+        assertEquals(listOf(1, 2), RickMortyApi(engine).getAllCharacters().map { it.id })
+    }
 }
